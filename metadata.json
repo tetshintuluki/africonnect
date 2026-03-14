@@ -1,0 +1,8 @@
+{
+  "name": "Africonect",
+  "description": "A professional social platform for business networking, job recruitment, and industry connections.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

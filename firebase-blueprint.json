@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Individual professional profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "gender": { "type": "string" },
+        "location": { "type": "string" },
+        "profession": { "type": "string" },
+        "education": { "type": "string" },
+        "experience": { "type": "string" },
+        "skills": { "type": "string" },
+        "cvUrl": { "type": "string" },
+        "profilePhoto": { "type": "string" },
+        "availability": { "type": "boolean" },
+        "following": { "type": "array", "items": { "type": "string" } },
+        "role": { "type": "string", "enum": ["individual", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Business": {
+      "title": "Business",
+      "description": "Company profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "companyName": { "type": "string" },
+        "industry": { "type": "string" },
+        "location": { "type": "string" },
+        "website": { "type": "string" },
+        "description": { "type": "string" },
+        "logo": { "type": "string" },
+        "contact": { "type": "string" },
+        "employees": { "type": "number" },
+        "services": { "type": "string" },
+        "products": { "type": "string" },
+        "role": { "type": "string", "enum": ["business"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isApproved": { "type": "boolean" }
+      },
+      "required": ["uid", "companyName", "industry", "role"]
+    },
+    "Job": {
+      "title": "Job",
+      "description": "Job vacancy listing",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string" },
+        "companyName": { "type": "string" },
+        "companyLogo": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "requirements": { "type": "string" },
+        "salary": { "type": "string" },
+        "location": { "type": "string" },
+        "type": { "type": "string", "enum": ["full-time", "part-time", "contract", "internship"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["companyId", "title", "description"]
+    },
+    "Ad": {
+      "title": "Ad",
+      "description": "Business advertisement",
+      "type": "object",
+      "properties": {
+        "businessId": { "type": "string" },
+        "businessName": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "adType": { "type": "string", "enum": ["product", "service", "recruitment", "event"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isSponsored": { "type": "boolean" }
+      },
+      "required": ["businessId", "title", "adType"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Feed post",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "content"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chatId", "senderId", "participants", "text"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "Job application",
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "applicantId": { "type": "string" },
+        "companyId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "accepted", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["jobId", "applicantId", "companyId"]
+    }
+  },
+  "firestore": {
+    "users": { "schema": "User", "description": "Individual profiles" },
+    "businesses": { "schema": "Business", "description": "Company profiles" },
+    "jobs": { "schema": "Job", "description": "Job listings" },
+    "ads": { "schema": "Ad", "description": "Advertisements" },
+    "posts": { "schema": "Post", "description": "Feed posts" },
+    "messages": { "schema": "Message", "description": "Chat messages" },
+    "applications": { "schema": "Application", "description": "Job applications" }
+  }
+}

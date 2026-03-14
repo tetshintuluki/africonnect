@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // User: uid, name, email, phone, gender, location, profession, education, experience, skills, cvUrl, profilePhoto, availability, role (individual/admin), createdAt
+    // Business: uid, companyName, industry, location, website, description, logo, contact, employees, services, products, role (business), createdAt, isApproved
+    // Job: companyId, companyName, companyLogo, title, description, requirements, salary, location, type, createdAt
+    // Ad: businessId, businessName, title, description, imageUrl, adType, createdAt, isSponsored
+    // Post: authorId, authorName, authorPhoto, authorRole, content, imageUrl, createdAt
+    // Message: chatId, senderId, text, createdAt
+    // Application: jobId, applicantId, companyId, status, createdAt
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (exists(/databases/$(database)/documents/businesses/$(request.auth.uid)) && get(/databases/$(database)/documents/businesses/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "kinofelsen@gmail.com" && request.auth.token.email_verified == true) ||
+          (request.auth.token.email == "tetshicliffordntuluki@yahoo.com" && request.auth.token.email_verified == true)
+        );
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'role']) &&
+             data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && data.email.matches('^.+@.+\\..+$') &&
+             data.role in ['individual', 'admin'] &&
+             (!('following' in data) || data.following is list);
+    }
+
+    function isValidBusiness(data) {
+      return data.keys().hasAll(['uid', 'companyName', 'industry', 'role']) &&
+             data.uid == request.auth.uid &&
+             data.companyName is string && data.companyName.size() > 0 && data.companyName.size() < 100 &&
+             data.role == 'business' &&
+             (!('isApproved' in data) || data.isApproved is bool);
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['chatId', 'senderId', 'participants', 'text', 'createdAt']) &&
+             data.senderId == request.auth.uid &&
+             data.participants is list &&
+             data.participants.size() == 2 &&
+             request.auth.uid in data.participants &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 5000;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data)) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /businesses/{businessId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(businessId) && isValidBusiness(request.resource.data) && (!('isApproved' in request.resource.data) || request.resource.data.isApproved == false);
+      allow update: if (isOwner(businessId) && isValidBusiness(request.resource.data) && (request.resource.data.isApproved == resource.data.isApproved || !('isApproved' in resource.data))) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (get(/databases/$(database)/documents/businesses/$(request.auth.uid)).data.role == 'business' || isAdmin());
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.companyId == request.auth.uid);
+    }
+
+    match /ads/{adId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (get(/databases/$(database)/documents/businesses/$(request.auth.uid)).data.role == 'business' || isAdmin());
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.businessId == request.auth.uid);
+    }
+
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      allow create: if isAuthenticated() && isValidMessage(request.resource.data);
+    }
+
+    match /applications/{appId} {
+      allow read: if isAuthenticated() && (resource.data.applicantId == request.auth.uid || resource.data.companyId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.applicantId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.companyId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+  }
+}
